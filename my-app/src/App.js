@@ -6,12 +6,23 @@ function Board({value, handleBoard}) {
 }
 
 export default function BuildBoard() {
-  const [squares, setSquares] = useState(Array(10).fill(null))
-  const [oxTurn, setOxTurn] = useState(true)
+  const [squares, setSquares] = useState([Array(10).fill(null)]);
+  const [oxTurn, setOxTurn] = useState(true);
+  const [currentMove, setCurrentMove] = useState(0);
+  const currentSquares = squares[currentMove];
 
+  const getWinner = WhoWins(squares)
+  let status;
+  if(getWinner) {
+    status = 'Winner: ' + getWinner;
+  }
+  else{
+    status = 'Next player: ' + (oxTurn ? "X" : "O");
+  }
+  
   function clickBoard(i) {
     const newSquares = squares.slice();
-    if(newSquares[i])
+    if(newSquares[i] || getWinner)
     {
       return;
     }
@@ -28,6 +39,7 @@ export default function BuildBoard() {
 
   return (
     <>
+      <div className="status">{status}</div>
       <div>
         <Board value={squares[0]} handleBoard={() => clickBoard(0)} />
         <Board value={squares[1]} handleBoard={() => clickBoard(1)} />
@@ -47,7 +59,7 @@ export default function BuildBoard() {
   );
 }
 
-function WhoWins({squares}) {
+function WhoWins(squares) {
   const endGame = [
     [0,1,2],
     [3,4,5],
@@ -59,8 +71,13 @@ function WhoWins({squares}) {
     [2,4,6],
   ]
 
-  for(let ax=0; ax<endGame.length(); ax++)
+  for(let ax=0; ax<endGame.length; ax++)
   {
-    
+    const [a,b,c] = endGame[ax];
+    if(squares[a] && squares[a] === squares[b] && squares[b] === squares[c])
+    {
+      return squares[a];
+    }
   }
+  return null;
 }
