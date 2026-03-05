@@ -1,83 +1,107 @@
 import {useState} from 'react';
-import './App.css';
+import catalogData from './catalog.json';
 
-function Board({value, handleBoard}) {
-  return <button className="myBoard" onClick ={handleBoard}>{value}</button>
+function SearchBox({searchLine,setSearchLine}) {
+  return <input type="text" placeholder = "Search.." value = {searchLine} onChange={(e) => setSearchLine(e.target.value)}></input>
 }
 
-export default function BuildBoard() {
-  const [squares, setSquares] = useState([Array(10).fill(null)]);
-  const [oxTurn, setOxTurn] = useState(true);
-  const [currentMove, setCurrentMove] = useState(0);
-  const currentSquares = squares[currentMove];
+function StockFilter({stockOnly, setStockOnly}) {
+  return(
+    <label>
+      <input type="checkbox" checked={stockOnly} onChange={(e) => setStockOnly(e.target.checked)}></input>
+        Only show products in stock
+    </label>
+   )
+}
 
-  const getWinner = WhoWins(squares)
-  let status;
-  if(getWinner) {
-    status = 'Winner: ' + getWinner;
-  }
-  else{
-    status = 'Next player: ' + (oxTurn ? "X" : "O");
-  }
-  
-  function clickBoard(i) {
-    const newSquares = squares.slice();
-    if(newSquares[i] || getWinner)
-    {
-      return;
-    }
-    if(oxTurn)
-    {
-      newSquares[i] = "X";
-    }
-    else{
-      newSquares[i] = "O";
-    }
-    setOxTurn(!oxTurn);
-    setSquares(newSquares);
-  }
-
+function FilterableProductTable({searchLine, setSearchLine, stockOnly, setStockOnly}) {
   return (
     <>
-      <div className="status">{status}</div>
-      <div>
-        <Board value={squares[0]} handleBoard={() => clickBoard(0)} />
-        <Board value={squares[1]} handleBoard={() => clickBoard(1)} />
-        <Board value={squares[2]} handleBoard={() => clickBoard(2)} />
-      </div>
-      <div>
-        <Board value={squares[3]} handleBoard={() => clickBoard(3)} />
-        <Board value={squares[4]} handleBoard={() => clickBoard(4)} />
-        <Board value={squares[5]} handleBoard={() => clickBoard(5)} />
-      </div>
-      <div>
-        <Board value={squares[6]} handleBoard={() => clickBoard(6)} />
-        <Board value={squares[7]} handleBoard={() => clickBoard(7)} />
-        <Board value={squares[8]} handleBoard={() => clickBoard(8)}/>
-      </div>
+      <div><SearchBox searchLine={searchLine} setSearchLine={setSearchLine}/></div>
+      <div><StockFilter stockOnly={stockOnly} setStockOnly={setStockOnly}/></div>
     </>
+  )
+}
+
+
+
+function ProductCategoryRow({category}) {
+  return(
+    <tr>
+      <th>
+        {category}
+      </th>
+    </tr>
   );
 }
 
-function WhoWins(squares) {
-  const endGame = [
-    [0,1,2],
-    [3,4,5],
-    [6,7,8],
-    [0,3,6],
-    [1,4,7],
-    [2,5,8],
-    [0,4,8],
-    [2,4,6],
-  ]
+function ProductRow({product}) {
+  const name = product.stocked? product.name:
+    <span style={{color: 'red'}}>
+      {product.name}
+    </span>;
 
-  for(let ax=0; ax<endGame.length; ax++)
-  {
-    const [a,b,c] = endGame[ax];
-    if(squares[a] && squares[a] === squares[b] && squares[b] === squares[c])
-    {
-      return squares[a];
-    }
-  }
-  return null;
+  return(
+    <tr>
+      <td>
+        {name}
+      </td>
+      <td>
+        {product.price}
+      </td>
+    </tr>
+  )
 }
+
+function ProductTable({products, stockOnly}) {
+  const rows= [];
+  let lastCategory = null;
+
+  products.forEach((product) => {
+    if(!stockOnly || product.stocked)
+    {
+      if(product.category !== lastCategory) {
+        rows.push(
+          <ProductCategoryRow 
+          category={product.category}
+          key={product.category}/>);
+      }
+      rows.push(
+      <ProductRow 
+      product={product}
+      key={product.name}/>
+      );
+      lastCategory=product.category;
+    } 
+  })
+
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Price</th>
+        </tr>
+      </thead>
+      <tbody>{rows}</tbody>
+    </table>
+  );
+}
+
+
+
+
+export default function MainPage() {
+  const [searchLine, setSearchLine] = useState('');
+  const [stockOnly, setStockOnly] = useState(false);
+  return (
+    <>
+      <div>
+        <FilterableProductTable searchLine={searchLine} setSearchLine={setSearchLine} stockOnly={stockOnly} setStockOnly={setStockOnly}/>
+      </div>
+      <div>
+        <ProductTable products={catalogData} stockOnly={stockOnly}/>
+      </div>
+    </>
+  );
+};
