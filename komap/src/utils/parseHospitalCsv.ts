@@ -22,6 +22,29 @@ function extractSido(address: string): string {
   return firstWord || "알 수 없음";
 }
 
+// 필터 ID → CSV 요양종별 값 매핑
+export const TYPE_FILTER_MAP: Record<string, string[]> = {
+  clinic:   ["의원"],
+  hospital: ["병원", "요양병원", "정신병원"],
+  general:  ["종합병원", "상급종합병원"],
+  korean:   ["한의원", "한방병원"],
+  dental:   ["치과의원", "치과병원"],
+  pharmacy: ["약국"],
+};
+
+export function filterHospitals(
+  hospitals: Hospital[],
+  sido: string | null,
+  typeId: string
+): Hospital[] {
+  const typeValues = typeId !== "all" ? TYPE_FILTER_MAP[typeId] ?? [] : null;
+  return hospitals.filter((h) => {
+    const sidoMatch = sido ? h.sido === sido : true;
+    const typeMatch = typeValues ? typeValues.includes(h.type) : true;
+    return sidoMatch && typeMatch;
+  });
+}
+
 export async function parseHospitalCsv(): Promise<Hospital[]> {
   const response = await fetch("/hospital.csv");
   const csvText = await response.text();
